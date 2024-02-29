@@ -1,0 +1,63 @@
+# Get the list of tenants
+tenants=$(az account tenant list --query [].tenantId -o json)
+
+# Convert the JSON to an array
+tenantArray=($(echo $tenants | jq -r '.[]'))
+
+# Display the tenants in a menu
+for index in "${!tenantArray[@]}"; do
+    echo "$index: ${tenantArray[index]}"
+done
+
+# Ask the user to select a tenant
+while true; do
+    read -p "Enter the number of the tenant you want to select: " tenantChoice
+    if [[ "$tenantChoice" =~ ^[0-9]+$ ]] && [ "$tenantChoice" -ge 0 ] && [ "$tenantChoice" -lt "${#tenantArray[@]}" ]; then
+        break
+    else
+        echo "Invalid choice, please enter a number between 0 and $((${#tenantArray[@]}-1))"
+    fi
+done
+
+# Save the selected tenant's ID into a variable
+selectedTenantId=${tenantArray[$tenantChoice]}
+
+echo "You selected tenant: $selectedTenantId"
+
+echo "You are about to login to Azure and the specified Tenant. You might need to 'ctrl+click' on the URL during the login process."
+az login --tenant $selectedTenantId
+
+# Get the subscriptions for the selected tenant
+subscriptions=$(az account list --query "[?tenantId=='$selectedTenantId'].{Name:name, SubscriptionId:id}" -o tsv)
+
+# Convert the subscriptions to an array
+IFS=$'\n' read -d '' -r -a subscriptionArray <<< "$subscriptions"
+
+# Check if there are any subscriptions for the selected tenant
+if [ ${#subscriptionArray[@]} -eq 0 ]; then
+    echo "No subscriptions found for the selected tenant."
+else
+    echo "Subscriptions for the selected tenant:"
+    for index in "${!subscriptionArray[@]}"; do
+        echo "$index: ${subscriptionArray[index]}"
+    done
+
+    # Ask the user to select a subscription
+    while true; do
+        read -p "Enter the number of the subscription you want to select: " subscriptionChoice
+        if [[ "$subscriptionChoice" =~ ^[0-9]+$ ]] && [ "$subscriptionChoice" -ge 0 ] && [ "$subscriptionChoice" -lt "${#subscriptionArray[@]}" ]; then
+            break
+        else
+            echo "Invalid choice, please enter a number between 0 and $((${#subscriptionArray[@]}-1))"
+        fi
+    done
+
+    # Save the selected subscription's ID into a variable
+    selectedSubscriptionId=$(echo ${subscriptionArray[$subscriptionChoice]} | awk '{print $1}')
+    # Extract the subscription ID and name
+    selectedSubscriptionName=$(echo ${subscriptionArray[$subscriptionChoice]} | awk -F'\t' '{print $1}')
+    selectedSubscriptionId=$(echo ${subscriptionArray[$subscriptionChoice]} | awk -F'\t' '{print $2}')
+
+    echo "You selected subscription ID: $selectedSubscriptionId, Name: $selectedSubscriptionName"
+
+fi
