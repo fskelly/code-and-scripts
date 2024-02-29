@@ -21,7 +21,7 @@ try {
   Write-Output $selectedTenant
   Connect-AzAccount -Tenant $tenants[$tenantChoice].Id
 
-  Write-output "Getting subscriptions that yo have access to from $($tenants[$tenantChoice].Name) tenant"
+  Write-output "Getting subscriptions that you have access to from $($tenants[$tenantChoice].Name) tenant"
   $subscriptions = Get-AzSubscription -TenantId $tenants[$tenantChoice].Id | Sort-Object SubscriptionName | Select-Object Name,SubscriptionId
   [int]$subscriptionCount = $subscriptions.count
 

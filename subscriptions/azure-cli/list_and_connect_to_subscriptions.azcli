@@ -1,5 +1,14 @@
+az login
+
 # Get the list of tenants
 tenants=$(az account tenant list --query [].tenantId -o json)
+
+# Check if jq is installed
+if ! command -v jq &> /dev/null
+then
+    echo "jq could not be found, installing..."
+    sudo apt-get install jq
+fi
 
 # Convert the JSON to an array
 tenantArray=($(echo $tenants | jq -r '.[]'))
@@ -59,5 +68,4 @@ else
     selectedSubscriptionId=$(echo ${subscriptionArray[$subscriptionChoice]} | awk -F'\t' '{print $2}')
 
     echo "You selected subscription ID: $selectedSubscriptionId, Name: $selectedSubscriptionName"
-
 fi
